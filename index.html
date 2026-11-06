@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Трансляция</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 100%; height: 100%; background: #000; overflow: hidden; }
+  #player { position: fixed; inset: 0; background: #000; display: flex; align-items: center; justify-content: center; z-index: 1; }
+  #player video { width: 100%; height: 100%; object-fit: contain; background: #000; opacity: 0; transition: opacity 0.6s ease; }
+  #player video.ready { opacity: 1; }
+  #soundBtn {
+    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+    z-index: 10; background: rgba(20,20,20,0.8); color: #fff;
+    border: 2px solid rgba(255,255,255,0.3); border-radius: 50px;
+    padding: 12px 24px; font-size: 1em; font-family: 'Segoe UI', sans-serif;
+    cursor: pointer; backdrop-filter: blur(8px); transition: opacity 0.4s ease;
+  }
+  #soundBtn.hidden { opacity: 0; pointer-events: none; }
+  #loading {
+    position: fixed; inset: 0; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; color: #555;
+    font-family: 'Segoe UI', sans-serif; z-index: 2; transition: opacity 0.4s;
+  }
+  #loading.hidden { opacity: 0; pointer-events: none; }
+  .spinner {
+    width: 44px; height: 44px; border: 4px solid rgba(255,255,255,0.15);
+    border-top-color: #ff7eb3; border-radius: 50%;
+    animation: spin 0.9s linear infinite; margin-bottom: 16px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  #error {
+    position: fixed; inset: 0; display: none; flex-direction: column;
+    align-items: center; justify-content: center; color: #e03131;
+    font-family: 'Segoe UI', sans-serif; text-align: center; padding: 20px; z-index: 3;
+  }
+</style>
+</head>
+<body>
+
+  <div id="player">
+    <video id="video" src="video.mp4" playsinline autoplay muted loop preload="auto"></video>
+  </div>
+
+  <div id="loading">
+    <div class="spinner"></div>
+    <div>Загрузка видео...</div>
+  </div>
+
+  <div id="error">
+    <div style="font-size:3em;margin-bottom:12px">😿</div>
+    <div>Не удалось загрузить видео.<br>Проверь, что файл <b>video.mp4</b> лежит рядом с index.html.</div>
+  </div>
+
+  <button id="soundBtn" class="hidden" onclick="enableSound()">🔇 Включить звук</button>
+
+<script>
+  const video = document.getElementById('video');
+  const loading = document.getElementById('loading');
+  const errorEl = document.getElementById('error');
+  const soundBtn = document.getElementById('soundBtn');
+
+  video.addEventListener('canplay', () => {
+    loading.classList.add('hidden');
+    video.classList.add('ready');
+    soundBtn.classList.remove('hidden');
+  });
+
+  video.play().catch(() => {
+    document.body.addEventListener('click', () => video.play(), { once: true });
+  });
+
+  function enableSound() {
+    video.muted = false;
+    video.play();
+    soundBtn.classList.add('hidden');
+  }
+
+  video.addEventListener('error', () => {
+    loading.classList.add('hidden');
+    errorEl.style.display = 'flex';
+  });
+
+  video.addEventListener('click', () => {
+    if (video.paused) video.play(); else video.pause();
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.code === 'Space') {
+      e.preventDefault();
+      if (video.paused) video.play(); else video.pause();
+    }
+  });
+</script>
+</body>
+</html>
