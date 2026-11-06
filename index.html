@@ -6,22 +6,26 @@
 <title>Трансляция</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  html, body { width: 100%; height: 100%; background: #000; overflow: hidden; }
+  html, body { width: 100%; height: 100%; background: #000; overflow: hidden; font-family: 'Segoe UI', sans-serif; }
+
   #player { position: fixed; inset: 0; background: #000; display: flex; align-items: center; justify-content: center; z-index: 1; }
   #player video { width: 100%; height: 100%; object-fit: contain; background: #000; opacity: 0; transition: opacity 0.6s ease; }
   #player video.ready { opacity: 1; }
+
   #soundBtn {
     position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
     z-index: 10; background: rgba(20,20,20,0.8); color: #fff;
     border: 2px solid rgba(255,255,255,0.3); border-radius: 50px;
-    padding: 12px 24px; font-size: 1em; font-family: 'Segoe UI', sans-serif;
-    cursor: pointer; backdrop-filter: blur(8px); transition: opacity 0.4s ease;
+    padding: 12px 24px; font-size: 1em; cursor: pointer;
+    backdrop-filter: blur(8px); transition: opacity 0.4s ease;
   }
   #soundBtn.hidden { opacity: 0; pointer-events: none; }
+
+  /* Загрузка */
   #loading {
     position: fixed; inset: 0; display: flex; flex-direction: column;
-    align-items: center; justify-content: center; color: #555;
-    font-family: 'Segoe UI', sans-serif; z-index: 2; transition: opacity 0.4s;
+    align-items: center; justify-content: center; color: #666;
+    z-index: 2; transition: opacity 0.4s;
   }
   #loading.hidden { opacity: 0; pointer-events: none; }
   .spinner {
@@ -30,11 +34,16 @@
     animation: spin 0.9s linear infinite; margin-bottom: 16px;
   }
   @keyframes spin { to { transform: rotate(360deg); } }
-  #error {
+
+  /* Заглушка «видео скоро появится» */
+  #placeholder {
     position: fixed; inset: 0; display: none; flex-direction: column;
-    align-items: center; justify-content: center; color: #e03131;
-    font-family: 'Segoe UI', sans-serif; text-align: center; padding: 20px; z-index: 3;
+    align-items: center; justify-content: center; color: #888;
+    text-align: center; padding: 20px; z-index: 3;
   }
+  #placeholder .icon { font-size: 4em; margin-bottom: 16px; opacity: 0.6; }
+  #placeholder .title { font-size: 1.3em; color: #ccc; margin-bottom: 8px; }
+  #placeholder .sub { font-size: 0.95em; color: #666; }
 </style>
 </head>
 <body>
@@ -48,9 +57,11 @@
     <div>Загрузка видео...</div>
   </div>
 
-  <div id="error">
-    <div style="font-size:3em;margin-bottom:12px">😿</div>
-    <div>Не удалось загрузить видео.<br>Проверь, что файл <b>video.mp4</b> лежит рядом с index.html.</div>
+  <!-- Экран, если видео ещё нет -->
+  <div id="placeholder">
+    <div class="icon">🎬</div>
+    <div class="title">Видео скоро появится</div>
+    <div class="sub">Загляни чуть позже 💕</div>
   </div>
 
   <button id="soundBtn" class="hidden" onclick="enableSound()">🔇 Включить звук</button>
@@ -58,29 +69,44 @@
 <script>
   const video = document.getElementById('video');
   const loading = document.getElementById('loading');
-  const errorEl = document.getElementById('error');
+  const placeholder = document.getElementById('placeholder');
   const soundBtn = document.getElementById('soundBtn');
 
+  let videoLoaded = false;
+
+  // Видео готово к показу
   video.addEventListener('canplay', () => {
+    videoLoaded = true;
     loading.classList.add('hidden');
+    placeholder.style.display = 'none';
     video.classList.add('ready');
     soundBtn.classList.remove('hidden');
   });
 
+  // Видео не найдено или ошибка формата
+  video.addEventListener('error', () => {
+    loading.classList.add('hidden');
+    placeholder.style.display = 'flex';
+  });
+
+  // Автозапуск
   video.play().catch(() => {
     document.body.addEventListener('click', () => video.play(), { once: true });
   });
+
+  // Если за 8 секунд ничего не загрузилось — показываем заглушку
+  setTimeout(() => {
+    if (!videoLoaded) {
+      loading.classList.add('hidden');
+      placeholder.style.display = 'flex';
+    }
+  }, 8000);
 
   function enableSound() {
     video.muted = false;
     video.play();
     soundBtn.classList.add('hidden');
   }
-
-  video.addEventListener('error', () => {
-    loading.classList.add('hidden');
-    errorEl.style.display = 'flex';
-  });
 
   video.addEventListener('click', () => {
     if (video.paused) video.play(); else video.pause();
